@@ -1,0 +1,25 @@
+{
+    "twentyOnePointsApp": {
+        "bloodPressure" : {
+            "home": {
+                "title": "BloodPressures",
+                "createLabel": "नया Blood Pressure बनाएँ",
+                "createOrEditLabel": "Blood Pressure बनाएँ या संपादित करें",
+                "search": "Blood Pressure खोजें"
+            },
+            "created": "एक नया Blood Pressure [identifier: {{ param }}] तैयार है",
+            "updated": "एक Blood Pressure [identifier: {{ param }}] का अद्यतन हुआ है",
+            "deleted": "Blood Pressure [identifier: {{ param }}] हटा दिया है",
+            "delete": {
+                "question": "Blood Pressure [id: {{ id }}] हटाने की पुष्टि करें"
+            },
+            "detail": {
+                "title": "Blood Pressure"
+            },
+            "timestamp": "Timestamp",
+            "systolic": "Systolic",
+            "diastolic": "Diastolic",
+            "user": "User"
+        }
+    }
+}

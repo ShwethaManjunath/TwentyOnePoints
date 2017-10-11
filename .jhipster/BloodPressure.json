@@ -1,0 +1,36 @@
+{
+    "fluentMethods": true,
+    "relationships": [
+        {
+            "relationshipName": "user",
+            "otherEntityName": "user",
+            "relationshipType": "many-to-one",
+            "otherEntityField": "login",
+            "ownerSide": true,
+            "otherEntityRelationshipName": "bloodPressure"
+        }
+    ],
+    "fields": [
+        {
+            "fieldName": "timestamp",
+            "fieldType": "LocalDate",
+            "fieldValidateRules": [
+                "required"
+            ]
+        },
+        {
+            "fieldName": "systolic",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "diastolic",
+            "fieldType": "Integer"
+        }
+    ],
+    "changelogDate": "20171011072728",
+    "dto": "no",
+    "service": "no",
+    "entityTableName": "blood_pressure",
+    "jpaMetamodelFiltering": false,
+    "pagination": "pagination"
+}
