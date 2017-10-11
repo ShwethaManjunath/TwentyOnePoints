@@ -5,8 +5,10 @@ import com.evolveback.health.domain.Weight;
 
 import com.evolveback.health.repository.WeightRepository;
 import com.evolveback.health.repository.search.WeightSearchRepository;
+import com.evolveback.health.security.SecurityUtils;
 import com.evolveback.health.web.rest.util.HeaderUtil;
 import com.evolveback.health.web.rest.util.PaginationUtil;
+import com.evolveback.health.web.rest.vm.WeightByPeriod;
 import io.swagger.annotations.ApiParam;
 import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
@@ -22,9 +24,11 @@ import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;
@@ -152,6 +156,25 @@ public class WeightResource {
         Page<Weight> page = weightSearchRepository.search(queryStringQuery(query), pageable);
         HttpHeaders headers = PaginationUtil.generateSearchPaginationHttpHeaders(query, page, "/api/_search/weights");
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    /**
+     * GET  /weight-by-days : get all the weigh-ins for last x days.
+     */
+    @GetMapping("/weight-by-days/{days}")
+    @Timed
+    public ResponseEntity<WeightByPeriod> getByDays(@PathVariable int days) {
+        LocalDate rightNow = LocalDate.now();
+        LocalDate daysAgo = rightNow.minusDays(days);
+        List<Weight> weighIns = weightRepository.findAllByTimestampBetweenOrderByTimestampDesc(daysAgo, rightNow);
+        WeightByPeriod response = new WeightByPeriod("Last " + days + " Days", filterByUser(weighIns));
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    private List<Weight> filterByUser(List<Weight> readings) {
+        Stream<Weight> userReadings = readings.stream()
+            .filter(bp -> bp.getUser().getLogin().equals(SecurityUtils.getCurrentUserLogin()));
+        return userReadings.collect(Collectors.toList());
     }
 
 }

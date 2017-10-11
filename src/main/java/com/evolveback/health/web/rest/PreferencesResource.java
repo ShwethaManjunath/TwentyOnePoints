@@ -5,6 +5,7 @@ import com.evolveback.health.domain.Preferences;
 
 import com.evolveback.health.repository.PreferencesRepository;
 import com.evolveback.health.repository.search.PreferencesSearchRepository;
+import com.evolveback.health.security.SecurityUtils;
 import com.evolveback.health.web.rest.util.HeaderUtil;
 import com.evolveback.health.web.rest.util.PaginationUtil;
 import io.swagger.annotations.ApiParam;
@@ -154,4 +155,25 @@ public class PreferencesResource {
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
+    /**
+     * GET /my-preferences -> get the current user's preferences.
+     */
+    @GetMapping("/my-preferences")
+    @Timed
+    public ResponseEntity<Preferences> getUserPreferences() {
+        String username = SecurityUtils.getCurrentUserLogin();
+
+        log.debug("REST request to get Preferences : {}", username);
+
+        Optional<Preferences> preferences = preferencesRepository.findOneByUserLogin(
+            username);
+
+        if (preferences.isPresent()) {
+            return new ResponseEntity<>(preferences.get(), HttpStatus.OK);
+        } else {
+            Preferences defaultPreferences = new Preferences();
+            defaultPreferences.setWeeklyGoals(10); // default
+            return new ResponseEntity<>(defaultPreferences, HttpStatus.OK);
+        }
+    }
 }

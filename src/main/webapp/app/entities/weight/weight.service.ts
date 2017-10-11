@@ -57,11 +57,10 @@ export class WeightService {
 
     private convertResponse(res: Response): ResponseWrapper {
         const jsonResponse = res.json();
-        const result = [];
         for (let i = 0; i < jsonResponse.length; i++) {
-            result.push(this.convertItemFromServer(jsonResponse[i]));
+            this.convertItemFromServer(jsonResponse[i]);
         }
-        return new ResponseWrapper(res.headers, result, res.status);
+        return new ResponseWrapper(res.headers, jsonResponse, res.status);
     }
 
     /**
@@ -82,5 +81,13 @@ export class WeightService {
         copy.timestamp = this.dateUtils
             .convertLocalDateToServer(weight.timestamp);
         return copy;
+    }
+
+    last30Days(): Observable<Weight> {
+        return this.http.get('api/weight-by-days/30').map((res: Response) => {
+            const jsonResponse = res.json();
+            this.convertItemFromServer(jsonResponse);
+            return jsonResponse;
+        });
     }
 }

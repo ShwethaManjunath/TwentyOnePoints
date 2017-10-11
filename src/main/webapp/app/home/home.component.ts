@@ -10,6 +10,7 @@ import {D3ChartService} from "./d3-chart.service";
 import {logging} from "selenium-webdriver";
 import {PreferencesService} from "../entities/preferences/preferences.service";
 import {Preferences} from "../entities/preferences/preferences.model";
+import {WeightService} from "../entities/weight/weight.service";
 
 @Component({
     selector: 'jhi-home',
@@ -28,6 +29,9 @@ export class HomeComponent implements OnInit {
     bpOptions: any;
     bpData: any;
     preferences: Preferences;
+    weights: any = {};
+    weightOptions: any;
+    weightData: any;
 
     eventSubscriber: Subscription;
 
@@ -37,7 +41,8 @@ export class HomeComponent implements OnInit {
         private eventManager: JhiEventManager,
         private bloodPressureService: BloodPressureService,
         private preferencesService: PreferencesService,
-        private pointsService:PointsService) {
+        private pointsService:PointsService,
+        private weightService: WeightService) {
     }
     getUserData() {
         // Get preferences
@@ -105,6 +110,34 @@ export class HomeComponent implements OnInit {
                     .apply(Math, upperValues) + 10];
             } else {
                 this.bpReadings.readings = [];
+            }
+        });
+
+
+        // Get weight readings for the last 30 days
+        this.weightService.last30Days().subscribe((weights: any) => {
+            this.weights = weights;
+            if (weights.weighIns.length) {
+                this.weightOptions = {... D3ChartService.getChartConfig() };
+                this.weightOptions.title.text = this.weights.period;
+                this.weightOptions.chart.yAxis.axisLabel = 'Weight';
+                const weightValues = [];
+                const values = [];
+                weights.weighIns.forEach((item) => {
+                    weightValues.push({
+                        x: new Date(item.timestamp),
+                        y: item.weight
+                    });
+                    values.push(item.weight);
+                });
+                this.weightData = [{
+                    values: weightValues,
+                    key: 'Weight',
+                    color: '#ffeb3b',
+                    area: true
+                }];
+                // set y scale to be 10 more than max and min
+                this.weightOptions.chart.yDomain = [Math.min.apply(Math, values) - 10, Math.max.apply(Math, values) + 10];
             }
         });
 
