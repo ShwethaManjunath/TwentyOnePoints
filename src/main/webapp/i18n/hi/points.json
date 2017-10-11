@@ -1,0 +1,27 @@
+{
+    "twentyOnePointsApp": {
+        "points" : {
+            "home": {
+                "title": "Points",
+                "createLabel": "नया Points बनाएँ",
+                "createOrEditLabel": "Points बनाएँ या संपादित करें",
+                "search": "Points खोजें"
+            },
+            "created": "एक नया Points [identifier: {{ param }}] तैयार है",
+            "updated": "एक Points [identifier: {{ param }}] का अद्यतन हुआ है",
+            "deleted": "Points [identifier: {{ param }}] हटा दिया है",
+            "delete": {
+                "question": "Points [id: {{ id }}] हटाने की पुष्टि करें"
+            },
+            "detail": {
+                "title": "Points"
+            },
+            "date": "Date",
+            "exercise": "Exercise",
+            "meals": "Meals",
+            "alcohol": "Alcohol",
+            "notes": "Notes",
+            "user": "User"
+        }
+    }
+}
