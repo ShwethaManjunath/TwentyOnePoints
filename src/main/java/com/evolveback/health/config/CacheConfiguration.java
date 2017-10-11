@@ -43,6 +43,7 @@ public class CacheConfiguration {
             cm.createCache(com.evolveback.health.domain.User.class.getName() + ".authorities", jcacheConfiguration);
             cm.createCache(com.evolveback.health.domain.Points.class.getName(), jcacheConfiguration);
             cm.createCache(com.evolveback.health.domain.BloodPressure.class.getName(), jcacheConfiguration);
+            cm.createCache(com.evolveback.health.domain.Weight.class.getName(), jcacheConfiguration);
             // jhipster-needle-ehcache-add-entry
         };
     }

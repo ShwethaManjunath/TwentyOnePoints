@@ -9,6 +9,7 @@
                 "main": "Entités",
                 "points": "Points",
                 "bloodPressure": "Blood Pressure",
+                "weight": "Weight",
                 "jhipster-needle-menu-add-entry": "JHipster will add additional entities here (do not translate!)"
             },
             "account": {
