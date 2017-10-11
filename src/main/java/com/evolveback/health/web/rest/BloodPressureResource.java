@@ -5,8 +5,10 @@ import com.evolveback.health.domain.BloodPressure;
 
 import com.evolveback.health.repository.BloodPressureRepository;
 import com.evolveback.health.repository.search.BloodPressureSearchRepository;
+import com.evolveback.health.security.SecurityUtils;
 import com.evolveback.health.web.rest.util.HeaderUtil;
 import com.evolveback.health.web.rest.util.PaginationUtil;
+import com.evolveback.health.web.rest.vm.BloodPressureByPeriod;
 import io.swagger.annotations.ApiParam;
 import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
@@ -22,9 +24,11 @@ import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;
@@ -141,7 +145,7 @@ public class BloodPressureResource {
      * SEARCH  /_search/blood-pressures?query=:query : search for the bloodPressure corresponding
      * to the query.
      *
-     * @param query the query of the bloodPressure search
+     * @param query    the query of the bloodPressure search
      * @param pageable the pagination information
      * @return the result of the search
      */
@@ -152,6 +156,17 @@ public class BloodPressureResource {
         Page<BloodPressure> page = bloodPressureSearchRepository.search(queryStringQuery(query), pageable);
         HttpHeaders headers = PaginationUtil.generateSearchPaginationHttpHeaders(query, page, "/api/_search/blood-pressures");
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @RequestMapping("/bp-by-days/{days}")
+    @Timed
+    public ResponseEntity<BloodPressureByPeriod> getByDays(@PathVariable int days) {
+        LocalDate rightNow = LocalDate.now();
+        LocalDate daysAgo = rightNow.minusDays(days);
+        List<BloodPressure> readings = bloodPressureRepository.findAllByTimestampBetweenAndUserLoginOrderByTimestampDesc(
+            daysAgo, rightNow, SecurityUtils.getCurrentUserLogin());
+        BloodPressureByPeriod response = new BloodPressureByPeriod("Last " + days + " Days", readings);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 }

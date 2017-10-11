@@ -22,6 +22,7 @@
     "font-awesome": "4.7.0",
     "jquery": "3.2.1",
     "ng-jhipster": "0.2.12",
+    "ng2-nvd3": "^2.0.0",
     "ng2-webstorage": "1.8.0",
     "ngx-cookie": "1.0.0",
     "ngx-infinite-scroll": "0.5.1",
@@ -64,11 +65,14 @@
     "karma-webpack": "2.0.4",
     "merge-jsons-webpack-plugin": "1.0.11",
     "ngc-webpack": "3.2.2",
+    "node-sass": "4.5.3",
+    "postcss-loader": "2.0.6",
     "protractor": "5.1.2",
     "protractor-jasmine2-screenshot-reporter": "0.4.0",
     "proxy-middleware": "0.15.0",
     "puppeteer": "0.10.2",
     "rimraf": "2.6.1",
+    "sass-loader": "6.0.6",
     "sourcemap-istanbul-instrumenter-loader": "0.2.0",
     "string-replace-webpack-plugin": "0.1.3",
     "style-loader": "0.18.2",
@@ -77,18 +81,15 @@
     "tslint": "5.5.0",
     "tslint-loader": "3.5.3",
     "typescript": "2.5.2",
-    "sass-loader": "6.0.6",
-    "node-sass": "4.5.3",
-    "postcss-loader": "2.0.6",
-    "xml2js": "0.4.17",
     "uglifyjs-webpack-plugin": "1.0.0-beta.2",
+    "web-app-manifest-loader": "0.1.1",
     "webpack": "3.6.0",
     "webpack-dev-server": "2.8.2",
     "webpack-merge": "4.1.0",
     "webpack-notifier": "1.5.0",
     "webpack-visualizer-plugin": "0.1.11",
-    "web-app-manifest-loader": "0.1.1",
-    "write-file-webpack-plugin": "4.1.0"
+    "write-file-webpack-plugin": "4.1.0",
+    "xml2js": "0.4.17"
   },
   "engines": {
     "node": ">=6.9.0"
@@ -111,8 +112,7 @@
     "webpack:prod": "yarn run cleanup && yarn run webpack:prod:main && yarn run clean-www",
     "webpack:test": "yarn run test",
     "webpack-dev-server": "node --max_old_space_size=4096 node_modules/webpack-dev-server/bin/webpack-dev-server.js",
-    "webpack": "node --max_old_space_size=4096 node_modules/webpack/bin/webpack.js"
-,
+    "webpack": "node --max_old_space_size=4096 node_modules/webpack/bin/webpack.js",
     "e2e": "protractor src/test/javascript/protractor.conf.js",
     "postinstall": "webdriver-manager update"
   }

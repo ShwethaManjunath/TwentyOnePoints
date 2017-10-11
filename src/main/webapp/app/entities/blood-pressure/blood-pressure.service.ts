@@ -57,11 +57,11 @@ export class BloodPressureService {
 
     private convertResponse(res: Response): ResponseWrapper {
         const jsonResponse = res.json();
-        const result = [];
+
         for (let i = 0; i < jsonResponse.length; i++) {
-            result.push(this.convertItemFromServer(jsonResponse[i]));
+            this.convertItemFromServer(jsonResponse[i]);
         }
-        return new ResponseWrapper(res.headers, result, res.status);
+        return new ResponseWrapper(res.headers, jsonResponse, res.status);
     }
 
     /**
@@ -82,5 +82,13 @@ export class BloodPressureService {
         copy.timestamp = this.dateUtils
             .convertLocalDateToServer(bloodPressure.timestamp);
         return copy;
+    }
+
+    last30Days(): Observable<BloodPressure> {
+        return this.http.get('api/bp-by-days/30').map((res: Response) => {
+            const jsonResponse = res.json();
+            this.convertItemFromServer(jsonResponse);
+            return jsonResponse;
+        });
     }
 }

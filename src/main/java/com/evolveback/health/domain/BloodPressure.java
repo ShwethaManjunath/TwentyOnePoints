@@ -38,6 +38,17 @@ public class BloodPressure implements Serializable {
     @ManyToOne
     private User user;
 
+    public BloodPressure(LocalDate timestamp, Integer systolic, Integer diastolic, User user) {
+        this.timestamp = timestamp;
+        this.systolic = systolic;
+        this.diastolic = diastolic;
+        this.user = user;
+    }
+
+    public BloodPressure() {
+
+    }
+
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
     public Long getId() {
         return id;

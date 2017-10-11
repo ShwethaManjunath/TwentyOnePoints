@@ -1,10 +1,9 @@
-
 <div class="row">
     <div class="col-md-3">
         <span class="hipster img-fluid rounded"></span>
     </div>
     <div class="col-md-9">
-        <h1 class="display-4" jhiTranslate="home.title">Welcome, Java Hipster!</h1>
+        <h1 class="display-4" jhiTranslate="home.title">Welcome,</h1>
         <p class="lead" jhiTranslate="home.subtitle">This is your homepage</p>
 
         <div [ngSwitch]="isAuthenticated()">
@@ -25,41 +24,67 @@
                     new account</a>
             </div>
         </div>
-        <a [routerLink]="['/', { outlets: { popup: ['points-new'] } }]"
-           class="btn btn-primary m-0 mb-1 text-white">Add Points
-        </a>
 
-        <div class="row">
-            <div class="col-md-11">
-                <ngb-progressbar max="21" [value]="pointsThisWeek.points" [striped]="true" [hidden]="!pointsThisWeek.points">
-                    <span *ngIf="pointsThisWeek.points">{{pointsThisWeek.points}} / Goal: 10</span>
-                </ngb-progressbar>
-                <ngb-alert [dismissible]="false" [hidden]="pointsThisWeek.points">
-                    <span >No points yet this week, better get moving!</span>
-                </ngb-alert>
+        <div *ngIf="isAuthenticated()">
+
+
+            <div class="row">
+                <div class="col-md-8">
+                    <span> Points for the week of {{pointsThisWeek.week | date: 'longDate'}}: </span>
+                </div>
+                <div class="col-md-3 text-right">
+                    <a [routerLink]="['/', { outlets: { popup: ['points-new'] } }]"
+                       class="btn btn-primary m-0 mb-1 text-white">Add Points</a>
+                </div>
             </div>
+
+            <div class="row">
+                <div class="col-md-11">
+                    <ngb-progressbar max="21" [value]="pointsThisWeek.points" [striped]="true"
+                                     [type]="pointsThisWeek.progress" [hidden]="!pointsThisWeek.points">
+                    <span *ngIf="pointsThisWeek.points">
+                        {{pointsThisWeek.points}} / Goal: {{preferences.weeklyGoals}}
+                    </span>
+                    </ngb-progressbar>
+                    <ngb-alert [dismissible]="false" [hidden]="pointsThisWeek.points">
+                    <span>
+                        No points yet this week, better get moving!</span>
+                    </ngb-alert>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-8 col-xs-3 text-nowrap">
+                    <h4 class="mt-1 hidden-sm-down">Blood Pressure:</h4>
+                </div>
+                <div class="col-md-3 text-right">
+                    <a [routerLink]="['/', { outlets: { popup: ['blood-pressure-new'] } }]"
+                       class="btn btn-secondary btn-sm">
+                        <span>Add Blood Pressure</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-11">
+                <span *ngIf="bpReadings.readings && bpReadings.readings.length">
+                    <nvd3 [options]="bpOptions" [data]="bpData" class="with-3d-shadow with-transitions"></nvd3>
+                </span>
+                    <ngb-alert [dismissible]="false" [hidden]="bpReadings.readings && bpReadings.readings.length">
+                    <span>
+                        No blood pressure readings found.
+                    </span>
+                    </ngb-alert>
+                </div>
+            </div>
+
+
+            <!--<div class="row">-->
+                <!--<div class="col-md-3">-->
+                    <!--<a [routerLink]="['/', { outlets: { popup: 'preferences/'+ preferences.id + '/edit'} }]"-->
+                       <!--class="pull-right">Edit Preferences</a>-->
+                <!--</div>-->
+            <!--</div>-->
         </div>
-        <p jhiTranslate="home.question">
-            If you have any question on JHipster:
-        </p>
-
-        <ul>
-            <li><a href="http://www.jhipster.tech/" target="_blank" rel="noopener" jhiTranslate="home.link.homepage">JHipster
-                homepage</a></li>
-            <li><a href="http://stackoverflow.com/tags/jhipster/info" target="_blank" rel="noopener"
-                   jhiTranslate="home.link.stackoverflow">JHipster on Stack Overflow</a></li>
-            <li><a href="https://github.com/jhipster/generator-jhipster/issues?state=open" target="_blank"
-                   rel="noopener" jhiTranslate="home.link.bugtracker">JHipster bug tracker</a></li>
-            <li><a href="https://gitter.im/jhipster/generator-jhipster" target="_blank" rel="noopener"
-                   jhiTranslate="home.link.chat">JHipster public chat room</a></li>
-            <li><a href="https://twitter.com/java_hipster" target="_blank" rel="noopener"
-                   jhiTranslate="home.link.follow">follow @java_hipster on Twitter</a></li>
-        </ul>
-
-        <p>
-            <span jhiTranslate="home.like">If you like JHipster, don't forget to give us a star on</span> <a
-            href="https://github.com/jhipster/generator-jhipster" target="_blank" rel="noopener"
-            jhiTranslate="home.github">GitHub</a>!
-        </p>
     </div>
 </div>
