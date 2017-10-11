@@ -1,5 +1,6 @@
-import { browser, element, by, $ } from 'protractor';
-import { NavBarPage } from './../page-objects/jhi-page-objects';
+import {browser, element, by, $} from 'protractor';
+import {NavBarPage} from './../page-objects/jhi-page-objects';
+
 const path = require('path');
 
 describe('Weight e2e test', () => {
@@ -9,7 +10,7 @@ describe('Weight e2e test', () => {
     let weightComponentsPage: WeightComponentsPage;
     const fileToUpload = '../../../../main/webapp/content/images/logo-jhipster.png';
     const absolutePath = path.resolve(__dirname, fileToUpload);
-    
+
 
     beforeAll(() => {
         browser.get('/');
@@ -22,8 +23,8 @@ describe('Weight e2e test', () => {
     it('should load Weights', () => {
         navBarPage.goToEntity('weight');
         weightComponentsPage = new WeightComponentsPage();
-        expect(weightComponentsPage.getTitle()).toMatch(/twentyOnePointsApp.weight.home.title/);
-
+        expect(weightComponentsPage.getTitle())
+            .toMatch(/twentyOnePointsApp.weight.home.title/);
     });
 
     it('should load create Weight dialog', () => {
@@ -42,7 +43,7 @@ describe('Weight e2e test', () => {
         weightDialogPage.userSelectLastOption();
         weightDialogPage.save();
         expect(weightDialogPage.getSaveButton().isPresent()).toBeFalsy();
-    }); 
+    });
 
     afterAll(() => {
         navBarPage.autoSignOut();

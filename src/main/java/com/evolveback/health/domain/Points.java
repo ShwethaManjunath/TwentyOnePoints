@@ -45,6 +45,18 @@ public class Points implements Serializable {
     @ManyToOne
     private User user;
 
+    public Points(LocalDate date, Integer exercise, Integer meals, Integer alcohol, User user) {
+        this.date = date;
+        this.exercise = exercise;
+        this.meals = meals;
+        this.alcohol = alcohol;
+        this.user = user;
+    }
+
+    public Points() {
+
+    }
+
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
     public Long getId() {
         return id;

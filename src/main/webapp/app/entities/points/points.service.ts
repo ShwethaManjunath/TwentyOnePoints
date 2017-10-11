@@ -57,11 +57,10 @@ export class PointsService {
 
     private convertResponse(res: Response): ResponseWrapper {
         const jsonResponse = res.json();
-        const result = [];
         for (let i = 0; i < jsonResponse.length; i++) {
-            result.push(this.convertItemFromServer(jsonResponse[i]));
+            this.convertItemFromServer(jsonResponse[i]);
         }
-        return new ResponseWrapper(res.headers, result, res.status);
+        return new ResponseWrapper(res.headers, jsonResponse, res.status);
     }
 
     /**
@@ -82,5 +81,12 @@ export class PointsService {
         copy.date = this.dateUtils
             .convertLocalDateToServer(points.date);
         return copy;
+    }
+
+    thisWeek(): Observable<ResponseWrapper> {
+
+        return this.http.get('api/points-this-week')
+
+            .map((res: any) => this.convertResponse(res));
     }
 }

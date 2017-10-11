@@ -4,6 +4,7 @@ import com.evolveback.health.TwentyOnePointsApp;
 
 import com.evolveback.health.domain.Points;
 import com.evolveback.health.repository.PointsRepository;
+import com.evolveback.health.repository.UserRepository;
 import com.evolveback.health.repository.search.PointsSearchRepository;
 import com.evolveback.health.web.rest.errors.ExceptionTranslator;
 
@@ -20,6 +21,15 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import com.evolveback.health.domain.User;
+import org.springframework.web.context.WebApplicationContext;
+import java.time.DayOfWeek;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
+
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 import javax.persistence.EntityManager;
 import java.time.LocalDate;
@@ -73,6 +83,12 @@ public class PointsResourceIntTest {
     @Autowired
     private EntityManager em;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private WebApplicationContext context;
+
     private MockMvc restPointsMockMvc;
 
     private Points points;
@@ -80,12 +96,14 @@ public class PointsResourceIntTest {
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final PointsResource pointsResource = new PointsResource(pointsRepository, pointsSearchRepository);
+        final PointsResource pointsResource = new PointsResource(pointsRepository, pointsSearchRepository,
+            userRepository);
         this.restPointsMockMvc = MockMvcBuilders.standaloneSetup(pointsResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
             .setMessageConverters(jacksonMessageConverter).build();
     }
+
 
     /**
      * Create an entity for this test.
@@ -114,8 +132,15 @@ public class PointsResourceIntTest {
     public void createPoints() throws Exception {
         int databaseSizeBeforeCreate = pointsRepository.findAll().size();
 
+        // Create security-aware mockMvc
+        restPointsMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+
         // Create the Points
         restPointsMockMvc.perform(post("/api/points")
+            .with(user("user"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(points)))
             .andExpect(status().isCreated());
@@ -178,8 +203,14 @@ public class PointsResourceIntTest {
         // Initialize the database
         pointsRepository.saveAndFlush(points);
 
+        // Create security-aware mockMvc
+        restPointsMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+
         // Get all the pointsList
-        restPointsMockMvc.perform(get("/api/points?sort=id,desc"))
+        restPointsMockMvc.perform(get("/api/points?sort=id,desc").with((user("admin").roles("ADMIN"))))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(points.getId().intValue())))
@@ -258,10 +289,18 @@ public class PointsResourceIntTest {
     public void updateNonExistingPoints() throws Exception {
         int databaseSizeBeforeUpdate = pointsRepository.findAll().size();
 
+
+        // Create security-aware mockMvc
+        restPointsMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+
         // Create the Points
 
         // If the entity doesn't have an ID, it will be created instead of just being updated
         restPointsMockMvc.perform(put("/api/points")
+            .with(user("user"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(points)))
             .andExpect(status().isCreated());
@@ -325,5 +364,49 @@ public class PointsResourceIntTest {
         assertThat(points1).isNotEqualTo(points2);
         points1.setId(null);
         assertThat(points1).isNotEqualTo(points2);
+    }
+
+    private void createPointsByWeek(LocalDate thisMonday, LocalDate lastMonday) {
+
+        User user = userRepository.findOneByLogin("user").get();
+        // Create points in two separate weeks
+
+        points = new Points(thisMonday.plusDays(2), 1, 1, 1, user);
+        pointsRepository.saveAndFlush(points);
+        points = new Points(thisMonday.plusDays(3), 1, 1, 0, user);
+        pointsRepository.saveAndFlush(points);
+        points = new Points(lastMonday.plusDays(3), 0, 0, 1, user);
+        pointsRepository.saveAndFlush(points);
+        points = new Points(lastMonday.plusDays(4), 1, 1, 0, user);
+    }
+
+    @Test
+    @Transactional
+    public void getPointsThisWeek() throws Exception {
+        LocalDate today = LocalDate.now();
+        LocalDate thisMonday = today.with(DayOfWeek.MONDAY);
+        LocalDate lastMonday = thisMonday.minusWeeks(1);
+        createPointsByWeek(thisMonday, lastMonday);
+
+        // create security-aware mockMvc
+        restPointsMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+
+        // Get all the points
+        restPointsMockMvc.perform(get("/api/points")
+            .with(user("user").roles("USER")))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$", hasSize(3)));
+
+        // Get the points for this week only
+        restPointsMockMvc.perform(get("/api/points-this-week")
+            .with(user("user").roles("USER")))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.week").value(thisMonday.toString()))
+            .andExpect(jsonPath("$.points").value(5));
     }
 }
