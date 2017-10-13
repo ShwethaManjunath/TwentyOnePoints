@@ -17,12 +17,15 @@ import java.util.List;
 @Repository
 public interface WeightRepository extends JpaRepository<Weight, Long> {
 
-    @Query("select weight from Weight weight where weight.user.login = ?#{principal.username}")
-    List<Weight> findByUserIsCurrentUser();
+    @Query("select weight from Weight weight where weight.user.login = ?#{principal.username} " +
+        "order by weight.timestamp desc")
+    Page<Weight> findByUserIsCurrentUser(Pageable pageable);
 
     Page<Weight> findAllByOrderByTimestampDesc(Pageable pageable);
 
     List<Weight> findAllByTimestampBetweenOrderByTimestampDesc(LocalDate firstDate, LocalDate secondDate);
+
+
 
 
 }

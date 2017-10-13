@@ -3,8 +3,10 @@ package com.evolveback.health.web.rest;
 import com.codahale.metrics.annotation.Timed;
 import com.evolveback.health.domain.Weight;
 
+import com.evolveback.health.repository.UserRepository;
 import com.evolveback.health.repository.WeightRepository;
 import com.evolveback.health.repository.search.WeightSearchRepository;
+import com.evolveback.health.security.AuthoritiesConstants;
 import com.evolveback.health.security.SecurityUtils;
 import com.evolveback.health.web.rest.util.HeaderUtil;
 import com.evolveback.health.web.rest.util.PaginationUtil;
@@ -48,9 +50,12 @@ public class WeightResource {
 
     private final WeightSearchRepository weightSearchRepository;
 
-    public WeightResource(WeightRepository weightRepository, WeightSearchRepository weightSearchRepository) {
+    private final UserRepository userRepository;
+
+    public WeightResource(WeightRepository weightRepository, WeightSearchRepository weightSearchRepository,                     UserRepository userRepository) {
         this.weightRepository = weightRepository;
         this.weightSearchRepository = weightSearchRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -66,6 +71,10 @@ public class WeightResource {
         log.debug("REST request to save Weight : {}", weight);
         if (weight.getId() != null) {
             return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(ENTITY_NAME, "idexists", "A new weight cannot already have an ID")).body(null);
+        }
+        if (!SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)) {
+            log.debug("No user passed in, using current user: {}", SecurityUtils.getCurrentUserLogin());
+            weight.setUser(userRepository.findOneByLogin(SecurityUtils.getCurrentUserLogin()).get());
         }
         Weight result = weightRepository.save(weight);
         weightSearchRepository.save(result);
@@ -106,9 +115,14 @@ public class WeightResource {
     @GetMapping("/weights")
     @Timed
     public ResponseEntity<List<Weight>> getAllWeights(@ApiParam Pageable pageable) {
-        log.debug("REST request to get a page of Weights");
-        Page<Weight> page = weightRepository.findAll(pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/weights");
+        log.debug("REST request to get a page of Points");
+        Page<Weight> page;
+        if (SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)) {
+            page = weightRepository.findAllByOrderByTimestampDesc(pageable);
+        } else {
+            page = weightRepository.findByUserIsCurrentUser(pageable);
+        }
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, " /api/points");
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
@@ -145,7 +159,7 @@ public class WeightResource {
      * SEARCH  /_search/weights?query=:query : search for the weight corresponding
      * to the query.
      *
-     * @param query the query of the weight search
+     * @param query    the query of the weight search
      * @param pageable the pagination information
      * @return the result of the search
      */

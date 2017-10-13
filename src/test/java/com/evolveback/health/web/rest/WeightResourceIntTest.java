@@ -3,6 +3,7 @@ package com.evolveback.health.web.rest;
 import com.evolveback.health.TwentyOnePointsApp;
 
 import com.evolveback.health.domain.Weight;
+import com.evolveback.health.repository.UserRepository;
 import com.evolveback.health.repository.WeightRepository;
 import com.evolveback.health.repository.search.WeightSearchRepository;
 import com.evolveback.health.web.rest.errors.ExceptionTranslator;
@@ -20,6 +21,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
 import javax.persistence.EntityManager;
 import java.time.LocalDate;
@@ -28,6 +30,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -68,10 +72,16 @@ public class WeightResourceIntTest {
 
     private Weight weight;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private WebApplicationContext context;
+
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final WeightResource weightResource = new WeightResource(weightRepository, weightSearchRepository);
+        final WeightResource weightResource = new WeightResource(weightRepository, weightSearchRepository,userRepository);
         this.restWeightMockMvc = MockMvcBuilders.standaloneSetup(weightResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
@@ -101,9 +111,15 @@ public class WeightResourceIntTest {
     @Transactional
     public void createWeight() throws Exception {
         int databaseSizeBeforeCreate = weightRepository.findAll().size();
+        // Create security-aware mockMvc
+        restWeightMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
 
         // Create the Weight
         restWeightMockMvc.perform(post("/api/weights")
+            .with(user("user"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(weight)))
             .andExpect(status().isCreated());
@@ -163,8 +179,15 @@ public class WeightResourceIntTest {
         // Initialize the database
         weightRepository.saveAndFlush(weight);
 
+        // Create security-aware mockMvc
+        restWeightMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+
         // Get all the weightList
-        restWeightMockMvc.perform(get("/api/weights?sort=id,desc"))
+        restWeightMockMvc.perform(get("/api/weights?sort=id,desc")
+            .with(user("admin").roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(weight.getId().intValue())))
