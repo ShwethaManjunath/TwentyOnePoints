@@ -4,7 +4,9 @@ import com.codahale.metrics.annotation.Timed;
 import com.evolveback.health.domain.Preferences;
 
 import com.evolveback.health.repository.PreferencesRepository;
+import com.evolveback.health.repository.UserRepository;
 import com.evolveback.health.repository.search.PreferencesSearchRepository;
+import com.evolveback.health.security.AuthoritiesConstants;
 import com.evolveback.health.security.SecurityUtils;
 import com.evolveback.health.web.rest.util.HeaderUtil;
 import com.evolveback.health.web.rest.util.PaginationUtil;
@@ -45,9 +47,13 @@ public class PreferencesResource {
 
     private final PreferencesSearchRepository preferencesSearchRepository;
 
-    public PreferencesResource(PreferencesRepository preferencesRepository, PreferencesSearchRepository preferencesSearchRepository) {
+    private final UserRepository userRepository;
+
+    public PreferencesResource(PreferencesRepository preferencesRepository, PreferencesSearchRepository preferencesSearchRepository,
+                               UserRepository userRepository) {
         this.preferencesRepository = preferencesRepository;
         this.preferencesSearchRepository = preferencesSearchRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -64,6 +70,11 @@ public class PreferencesResource {
         if (preferences.getId() != null) {
             return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(ENTITY_NAME, "idexists", "A new preferences cannot already have an ID")).body(null);
         }
+        if (!SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)) {
+            log.debug("No user passed in, using current user: {}", SecurityUtils.getCurrentUserLogin());
+            preferences.setUser(userRepository.findOneByLogin(SecurityUtils.getCurrentUserLogin()).get());
+        }
+
         Preferences result = preferencesRepository.save(preferences);
         preferencesSearchRepository.save(result);
         return ResponseEntity.created(new URI("/api/preferences/" + result.getId()))
@@ -103,9 +114,18 @@ public class PreferencesResource {
     @GetMapping("/preferences")
     @Timed
     public ResponseEntity<List<Preferences>> getAllPreferences(@ApiParam Pageable pageable) {
-        log.debug("REST request to get a page of Preferences");
-        Page<Preferences> page = preferencesRepository.findAll(pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/preferences");
+//        log.debug("REST request to get a page of Preferences");
+//        Page<Preferences> page = preferencesRepository.findAll(pageable);
+//        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/preferences");
+//        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+        log.debug("REST request to get a page of Points");
+        Page<Preferences> page;
+        if (SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)) {
+            page = preferencesRepository.findAll(pageable);
+        } else {
+            page = preferencesRepository.findByUserIsCurrentUser(pageable);
+        }
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/points");
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
