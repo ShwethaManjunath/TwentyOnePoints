@@ -4,7 +4,9 @@ import com.codahale.metrics.annotation.Timed;
 import com.evolveback.health.domain.BloodPressure;
 
 import com.evolveback.health.repository.BloodPressureRepository;
+import com.evolveback.health.repository.UserRepository;
 import com.evolveback.health.repository.search.BloodPressureSearchRepository;
+import com.evolveback.health.security.AuthoritiesConstants;
 import com.evolveback.health.security.SecurityUtils;
 import com.evolveback.health.web.rest.util.HeaderUtil;
 import com.evolveback.health.web.rest.util.PaginationUtil;
@@ -48,9 +50,12 @@ public class BloodPressureResource {
 
     private final BloodPressureSearchRepository bloodPressureSearchRepository;
 
-    public BloodPressureResource(BloodPressureRepository bloodPressureRepository, BloodPressureSearchRepository bloodPressureSearchRepository) {
+    private final UserRepository userRepository;
+
+    public BloodPressureResource(BloodPressureRepository bloodPressureRepository, BloodPressureSearchRepository bloodPressureSearchRepository, UserRepository userRepository) {
         this.bloodPressureRepository = bloodPressureRepository;
         this.bloodPressureSearchRepository = bloodPressureSearchRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -65,7 +70,12 @@ public class BloodPressureResource {
     public ResponseEntity<BloodPressure> createBloodPressure(@Valid @RequestBody BloodPressure bloodPressure) throws URISyntaxException {
         log.debug("REST request to save BloodPressure : {}", bloodPressure);
         if (bloodPressure.getId() != null) {
-            return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(ENTITY_NAME, "idexists", "A new bloodPressure cannot already have an ID")).body(null);
+            return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(ENTITY_NAME, "idexists",
+                "A new bloodPressure cannot already have an ID")).body(null);
+        }
+        if (!SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)) {
+            log.debug("No user passed in, using current user: {}", SecurityUtils.getCurrentUserLogin());
+            bloodPressure.setUser(userRepository.findOneByLogin(SecurityUtils.getCurrentUserLogin()).get());
         }
         BloodPressure result = bloodPressureRepository.save(bloodPressure);
         bloodPressureSearchRepository.save(result);
@@ -106,9 +116,14 @@ public class BloodPressureResource {
     @GetMapping("/blood-pressures")
     @Timed
     public ResponseEntity<List<BloodPressure>> getAllBloodPressures(@ApiParam Pageable pageable) {
-        log.debug("REST request to get a page of BloodPressures");
-        Page<BloodPressure> page = bloodPressureRepository.findAll(pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/blood-pressures");
+        log.debug("REST request to get a page of Points");
+        Page<BloodPressure> page;
+        if (SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)) {
+            page = bloodPressureRepository.findAllByOrderByTimestampDesc(pageable);
+        } else {
+            page = bloodPressureRepository.findByUserIsCurrentUser(pageable);
+        }
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/points");
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
