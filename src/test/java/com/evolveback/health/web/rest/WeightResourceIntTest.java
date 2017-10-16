@@ -256,8 +256,15 @@ public class WeightResourceIntTest {
 
         // Create the Weight
 
+        // Create security-aware mockMvc
+        restWeightMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+
         // If the entity doesn't have an ID, it will be created instead of just being updated
         restWeightMockMvc.perform(put("/api/weights")
+            .with(user("user"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(weight)))
             .andExpect(status().isCreated());

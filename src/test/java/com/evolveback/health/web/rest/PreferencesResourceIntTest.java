@@ -4,6 +4,7 @@ import com.evolveback.health.TwentyOnePointsApp;
 
 import com.evolveback.health.domain.Preferences;
 import com.evolveback.health.repository.PreferencesRepository;
+import com.evolveback.health.repository.UserRepository;
 import com.evolveback.health.repository.search.PreferencesSearchRepository;
 import com.evolveback.health.web.rest.errors.ExceptionTranslator;
 
@@ -26,10 +27,14 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.evolveback.health.domain.enumeration.Units;
+import org.springframework.web.context.WebApplicationContext;
+
 /**
  * Test class for the PreferencesResource REST controller.
  *
@@ -61,16 +66,22 @@ public class PreferencesResourceIntTest {
     private ExceptionTranslator exceptionTranslator;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private EntityManager em;
 
     private MockMvc restPreferencesMockMvc;
 
     private Preferences preferences;
 
+    @Autowired
+    private WebApplicationContext context;
+
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final PreferencesResource preferencesResource = new PreferencesResource(preferencesRepository, preferencesSearchRepository);
+        final PreferencesResource preferencesResource = new PreferencesResource(preferencesRepository, preferencesSearchRepository,userRepository);
         this.restPreferencesMockMvc = MockMvcBuilders.standaloneSetup(preferencesResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
@@ -101,8 +112,15 @@ public class PreferencesResourceIntTest {
     public void createPreferences() throws Exception {
         int databaseSizeBeforeCreate = preferencesRepository.findAll().size();
 
+        // Create security-aware mockMvc
+        restPreferencesMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+
         // Create the Preferences
         restPreferencesMockMvc.perform(post("/api/preferences")
+            .with(user("user"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(preferences)))
             .andExpect(status().isCreated());
@@ -180,8 +198,15 @@ public class PreferencesResourceIntTest {
         // Initialize the database
         preferencesRepository.saveAndFlush(preferences);
 
+        restPreferencesMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+
+
         // Get all the preferencesList
-        restPreferencesMockMvc.perform(get("/api/preferences?sort=id,desc"))
+        restPreferencesMockMvc.perform(get("/api/preferences?sort=id,desc")
+        .with(user("admin").roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(preferences.getId().intValue())))
@@ -250,8 +275,14 @@ public class PreferencesResourceIntTest {
 
         // Create the Preferences
 
+        restPreferencesMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+
         // If the entity doesn't have an ID, it will be created instead of just being updated
         restPreferencesMockMvc.perform(put("/api/preferences")
+            .with(user("user"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(preferences)))
             .andExpect(status().isCreated());

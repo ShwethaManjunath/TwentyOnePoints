@@ -270,8 +270,16 @@ public class BloodPressureResourceIntTest {
 
         // Create the BloodPressure
 
+
+        // Create security-aware mockMvc
+        restBloodPressureMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
+
         // If the entity doesn't have an ID, it will be created instead of just being updated
         restBloodPressureMockMvc.perform(put("/api/blood-pressures")
+            .with(user("user"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(bloodPressure)))
             .andExpect(status().isCreated());
